@@ -1,21 +1,11 @@
 {
-  "name": "tes",
+  "name": "tes-ema-cross",
   "version": "1.0.0",
-  "description": "Task & Event Scheduler (TES) – a feature-rich personal productivity API server without external runtime dependencies.",
-  "main": "src/server.js",
-  "type": "module",
+  "private": true,
+  "description": "Research utilities for an EMA-based trade execution system",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node src/server.js",
-    "test": "node --test"
-  },
-  "keywords": [
-    "tasks",
-    "events",
-    "scheduler",
-    "productivity",
-    "api"
-  ],
-  "author": "gadgetsaavy",
-  "license": "ISC"
+    "lint": "ruff check .",
+    "format": "black .",
+    "typecheck": "pyright"
+  }
 }
