@@ -23,10 +23,14 @@ TES/
 
 1. Create and activate a Python environment.
 2. Install dependencies with `pip install -r requirements.txt`.
-3. Open `backtester.ipynb` in JupyterLab or VS Code to walk through the sample
+3. Run an ad-hoc backtest from the command line with `python -m tes.execution.cli \
+   data/sample_candles.csv --metrics-json reports/metrics.json --trades-csv reports/trades.csv`.
+   The CLI performs rigorous data validation, supports configurable position sizing,
+   and exports both equity curves and trade blotters for further analysis.
+4. Open `backtester.ipynb` in JupyterLab or VS Code to walk through the sample
    workflow.  The notebook shows how to download OHLCV candles, compute EMA
    signals, and simulate trades.
-4. Adjust the configuration variables in `strategies/ema_cross_02/tuples_and_variables.py`
+5. Adjust the configuration variables in `strategies/ema_cross_02/tuples_and_variables.py`
    to match your preferred market and trading parameters.
 
 ## Strategy overview
@@ -37,6 +41,22 @@ relationship between a fast EMA and a slow EMA to generate long/flat signals.
 Risk management is configurable via percentage-based stop-loss and take-profit
 levels.  Support functions for computing indicators and structuring the
 backtest outputs live in `dos_ind_cart_funcs.py`.
+
+## Execution and analytics enhancements
+
+The execution engine has been hardened for production-oriented workflows:
+
+* **Robust validation** – OHLCV inputs are checked for missing columns,
+  duplicate timestamps, non-positive prices, and other data-quality issues
+  before a backtest begins.
+* **Portfolio integrity** – Trade processing now enforces cash and position
+  constraints, tracks realised PnL alongside unrealised PnL, and records gross
+  exposure for each portfolio snapshot.
+* **Enhanced metrics** – Performance analysis includes Sharpe, Sortino, total
+  return, profit factor, average win/loss and more, making it easier to judge a
+  strategy's edge.
+* **Operational tooling** – The CLI can export equity curves, trade blotters
+  and JSON summaries in a single run, simplifying automation and monitoring.
 
 ## Data caching
 
