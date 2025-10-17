@@ -17,9 +17,13 @@ class PerformanceMetrics:
     annualised_return: float
     annualised_volatility: float
     sharpe_ratio: float
+    sortino_ratio: float
     max_drawdown: float
     trade_count: int
     win_rate: float
+    profit_factor: float
+    average_win: float
+    average_loss: float
 
 
 def compute_performance(equity_curve: pd.Series, trades: Iterable[Trade]) -> PerformanceMetrics:
@@ -34,6 +38,7 @@ def compute_performance(equity_curve: pd.Series, trades: Iterable[Trade]) -> Per
         annualised_return = 0.0
         annualised_volatility = 0.0
         sharpe = 0.0
+        sortino = 0.0
     else:
         periods_per_year = _infer_periods_per_year(equity.index)
         annualised_return = float((1 + returns.mean()) ** periods_per_year - 1)
@@ -41,6 +46,13 @@ def compute_performance(equity_curve: pd.Series, trades: Iterable[Trade]) -> Per
         sharpe = (
             (annualised_return / annualised_volatility)
             if annualised_volatility > 0
+            else 0.0
+        )
+        downside_returns = returns[returns < 0]
+        downside_volatility = float(downside_returns.std(ddof=0) * sqrt(periods_per_year)) if not downside_returns.empty else 0.0
+        sortino = (
+            (annualised_return / downside_volatility)
+            if downside_volatility > 0
             else 0.0
         )
 
@@ -54,6 +66,15 @@ def compute_performance(equity_curve: pd.Series, trades: Iterable[Trade]) -> Per
         if round_trip_pnls
         else 0.0
     )
+    gross_profit = sum(pnl for pnl in round_trip_pnls if pnl > 0)
+    gross_loss = -sum(pnl for pnl in round_trip_pnls if pnl < 0)
+    profit_factor = gross_profit / gross_loss if gross_loss > 0 else (float("inf") if gross_profit > 0 else 0.0)
+    average_win = gross_profit / sum(1 for pnl in round_trip_pnls if pnl > 0) if gross_profit > 0 else 0.0
+    average_loss = (
+        -(gross_loss / sum(1 for pnl in round_trip_pnls if pnl < 0))
+        if gross_loss > 0
+        else 0.0
+    )
 
     if trade_count == 0:
         win_rate = 0.0
@@ -63,9 +84,13 @@ def compute_performance(equity_curve: pd.Series, trades: Iterable[Trade]) -> Per
         annualised_return=annualised_return,
         annualised_volatility=annualised_volatility,
         sharpe_ratio=sharpe,
+        sortino_ratio=sortino,
         max_drawdown=max_drawdown,
         trade_count=trade_count,
         win_rate=win_rate,
+        profit_factor=profit_factor,
+        average_win=average_win,
+        average_loss=average_loss,
     )
 
 

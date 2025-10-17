@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List
+from typing import List, Sequence
 
 import numpy as np
 import pandas as pd
@@ -49,6 +49,12 @@ class ExecutionEngine:
         if candles.empty:
             raise ValueError("No candles supplied to execution engine")
 
+        candles = candles.copy()
+        _validate_candles(candles)
+        candles["timestamp"] = pd.to_datetime(candles["timestamp"], errors="raise")
+        if candles["timestamp"].duplicated().any():
+            raise ValueError("Duplicate timestamps detected in candles input")
+
         candles = candles.sort_values("timestamp").reset_index(drop=True)
         signals = self.strategy.generate_signals(candles)
         signal_df = self.strategy.to_dataframe(signals)
@@ -60,7 +66,13 @@ class ExecutionEngine:
         for idx, candle in candles.iterrows():
             timestamp = _ensure_timestamp(candle["timestamp"])
             price = float(candle["close"])
-            signal = signal_df.loc[timestamp] if timestamp in signal_df.index else None
+            if not np.isfinite(price) or price <= 0:
+                raise ValueError("Encountered non-positive or non-finite close price during backtest")
+
+            try:
+                signal = signal_df.loc[timestamp]
+            except KeyError:
+                signal = None
 
             if signal is not None:
                 if isinstance(signal, pd.Series):
@@ -87,7 +99,10 @@ class ExecutionEngine:
                     "equity": snap.equity,
                     "cash": snap.cash,
                     "position": snap.position_quantity,
+                    "position_value": snap.position_value,
                     "unrealised_pnl": snap.unrealised_pnl,
+                    "realised_pnl": snap.realised_pnl,
+                    "gross_exposure": snap.gross_exposure,
                 }
                 for snap in portfolio.snapshots
             ]
@@ -152,3 +167,19 @@ def _ensure_timestamp(value: object) -> datetime:
     if isinstance(value, (np.datetime64, pd.Timestamp)):
         return pd.Timestamp(value).to_pydatetime()
     raise TypeError(f"Unsupported timestamp type: {type(value)!r}")
+
+
+def _validate_candles(candles: pd.DataFrame) -> None:
+    required_columns: Sequence[str] = ("timestamp", "open", "high", "low", "close")
+    missing = [column for column in required_columns if column not in candles.columns]
+    if missing:
+        raise ValueError(f"Candles frame is missing required columns: {', '.join(missing)}")
+
+    if candles["timestamp"].isna().any():
+        raise ValueError("Candles contain missing timestamps")
+
+    if candles["close"].isna().any():
+        raise ValueError("Candles contain missing close prices")
+
+    if (candles["close"] <= 0).any():
+        raise ValueError("Candles contain non-positive close prices")
