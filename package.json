@@ -1,19 +1,21 @@
 {
   "name": "tes",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Task & Event Scheduler (TES) – a feature-rich personal productivity API server without external runtime dependencies.",
+  "main": "src/server.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
+    "test": "node --test"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/74Thirsty/TES.git"
-  },
+  "keywords": [
+    "tasks",
+    "events",
+    "scheduler",
+    "productivity",
+    "api"
+  ],
   "author": "gadgetsaavy",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/74Thirsty/TES/issues"
-  },
-  "homepage": "https://github.com/74Thirsty/TES#readme",
-  "description": ""
+  "license": "ISC"
 }
